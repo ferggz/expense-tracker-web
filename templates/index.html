@@ -4,11 +4,15 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Expense Tracker Web</title>
-    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
 </head>
 <body>
 
-    <h1>Expense Tracker Web</h1>
+    <h1>Users</h1>
+    <a href="/register">Register</a>
+
+    {% for user in users %}
+        <p>{{ user["username"] }}</p>
+    {% endfor %}
 
 </body>
 </html>

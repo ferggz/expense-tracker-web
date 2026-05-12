@@ -1,4 +1,4 @@
-from flask import Flask, render_template
+from flask import Flask, render_template, request, redirect
 import sqlite3
 
 app = Flask(__name__)
@@ -14,7 +14,34 @@ def get_db_connection():
 
 @app.route("/")
 def home():
-    return render_template("index.html")
+    connection = get_db_connection()
+
+    users = connection.execute("SELECT * FROM users").fetchall()
+
+    connection.close()
+
+    return render_template("index.html", users=users)
+
+
+@app.route("/register", methods=["GET", "POST"])
+def register():
+    if request.method == "POST":
+        username = request.form["username"]
+        password = request.form["password"]
+
+        connection = get_db_connection()
+
+        connection.execute("""
+            INSERT INTO users (username, password)
+            VALUES (?, ?)
+        """, (username, password))
+
+        connection.commit()
+        connection.close()
+
+        return redirect("/")
+
+    return render_template("register.html")
 
 
 if __name__ == "__main__":
