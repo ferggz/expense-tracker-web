@@ -1,0 +1,22 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Edit Expense</title>
+</head>
+<body>
+
+    <h1>Edit Expense</h1>
+
+    <form method="POST">
+        <input type="number" step="0.01" name="amount" value="{{ expense['amount'] }}" required>
+        <input type="text" name="category" value="{{ expense['category'] }}" required>
+        <input type="text" name="description" value="{{ expense['description'] }}" required>
+
+        <button type="submit">Save changes</button>
+    </form>
+
+    <a href="/dashboard">Back to dashboard</a>
+
+</body>
+</html>
