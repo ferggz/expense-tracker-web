@@ -146,6 +146,31 @@ def dashboard():
         total_params.append(f"%{search}%")
 
     total = connection.execute(total_query, total_params).fetchone()
+    expense_count = len(expenses)
+
+    average = 0
+
+    category_totals = {}
+    category_percentages = {}
+
+    if expense_count > 0:
+        average = total["total"] / expense_count
+
+    for expense in expenses:
+        category_name = expense["category"]
+
+        if category_name not in category_totals:
+            category_totals[category_name] = 0
+
+        category_totals[category_name] += expense["amount"]
+
+    if total["total"]:
+
+        for category_name, amount in category_totals.items():
+
+            percentage = (amount / total["total"]) * 100
+
+            category_percentages[category_name] = percentage
 
     if sort == "amount":
         expenses = sorted(
@@ -169,7 +194,11 @@ def dashboard():
         total=total["total"],
         category=category,
         sort=sort,
-        search=search
+        search=search,
+        expense_count=expense_count,
+        average=average,
+        category_totals=category_totals,
+        category_percentages=category_percentages
     )
 
 

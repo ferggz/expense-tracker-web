@@ -12,6 +12,45 @@
     <p>Total spent: {{ "%.2f"|format(total if total else 0) }} €</p>
 </div>
 
+<div class="total-box">
+    <p>Total expenses: {{ expense_count }}</p>
+
+    <p>
+        Average expense:
+        {{ "%.2f"|format(average) }} €
+    </p>
+</div>
+
+<h2>Category Summary</h2>
+
+{% if category_totals %}
+
+<table>
+
+    <tr>
+        <th>Category</th>
+        <th>Total</th>
+        <th>Percentage</th>
+    </tr>
+
+    {% for category_name, amount in category_totals.items() %}
+
+    <tr>
+        <td>{{ category_name }}</td>
+
+        <td>{{ "%.2f"|format(amount) }} €</td>
+
+        <td>
+            {{ "%.1f"|format(category_percentages[category_name]) }}%
+        </td>
+    </tr>
+
+    {% endfor %}
+
+</table>
+
+{% endif %}
+
 <form method="GET" action="/dashboard">
     <input
         type="text"
