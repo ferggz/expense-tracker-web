@@ -8,17 +8,21 @@
 
 <p>Welcome, {{ session["username"] }}</p>
 
-<div class="total-box">
-    <p>Total spent: {{ "%.2f"|format(total if total else 0) }} €</p>
-</div>
+<div class="stats-grid">
 
-<div class="total-box">
-    <p>Total expenses: {{ expense_count }}</p>
+    <div class="total-box">
+        <p>Total spent: {{ "%.2f"|format(total if total else 0) }} €</p>
+    </div>
 
-    <p>
-        Average expense:
-        {{ "%.2f"|format(average) }} €
-    </p>
+    <div class="total-box">
+        <p>Total expenses: {{ expense_count }}</p>
+
+        <p>
+            Average expense:
+            {{ "%.2f"|format(average) }} €
+        </p>
+    </div>
+
 </div>
 
 <h2>Category Summary</h2>
@@ -36,7 +40,11 @@
     {% for category_name, amount in category_totals.items() %}
 
     <tr>
-        <td>{{ category_name }}</td>
+        <td>
+            <a href="/dashboard?category={{ category_name }}">
+                {{ category_name }}
+            </a>
+        </td>
 
         <td>{{ "%.2f"|format(amount) }} €</td>
 
@@ -85,7 +93,7 @@
     <p>Showing expenses for category: {{ category }}</p>
 {% endif %}
 
-<a href="/dashboard">Clear filter</a>
+<a class="action-link" href="/dashboard">Clear filters</a>
 
 <h2>Your expenses</h2>
 
@@ -136,7 +144,11 @@
 
 {% else %}
 
-<p>No expenses found.</p>
+{% if category or search %}
+    <p>No matching expenses found.</p>
+{% else %}
+    <p>No expenses found.</p>
+{% endif %}
 
 {% endif %}
 

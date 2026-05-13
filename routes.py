@@ -44,14 +44,18 @@ def register():
         return redirect("/dashboard")
 
     if request.method == "POST":
-        username = request.form["username"]
+        username = request.form["username"].strip().lower()
         password = generate_password_hash(request.form["password"])
+    
+    if not username:
+        flash("Username cannot be empty", "error")
+        return redirect("/register")
 
         connection = get_db_connection()
 
         existing_user = connection.execute("""
             SELECT * FROM users
-            WHERE username = ?
+            WHERE LOWER(username) = LOWER(?)
         """, (username,)).fetchone()
 
         if existing_user:
@@ -80,14 +84,14 @@ def login():
         return redirect("/dashboard")
 
     if request.method == "POST":
-        username = request.form["username"]
+        username = request.form["username"].strip().lower()
         password = request.form["password"]
 
         connection = get_db_connection()
 
         user = connection.execute("""
             SELECT * FROM users
-            WHERE username = ?
+            WHERE LOWER(username) = LOWER(?)
         """, (username,)).fetchone()
 
         connection.close()
@@ -225,8 +229,13 @@ def add_expense():
             flash("Amount must be greater than 0", "error")
             return redirect("/add")
         
-        category = request.form["category"]
-        description = request.form["description"]
+        category = request.form["category"].strip().title()
+        description = request.form["description"].strip().title()
+
+        if not category or not description:
+            flash("Category and description cannot be empty", "error")
+            return redirect("/add")
+        
         date = datetime.now().strftime("%Y-%m-%d")
 
         connection = get_db_connection()
@@ -293,8 +302,12 @@ def edit_expense(expense_id):
             flash("Amount must be greater than 0")
             return redirect(f"/edit/{expense_id}")
         
-        category = request.form["category"]
-        description = request.form["description"]
+        category = request.form["category"].strip().title()
+        description = request.form["description"].strip().title()
+
+        if not category or not description:
+            flash("Category and description cannot be empty", "error")
+            return redirect(f"/edit/{expense_id}")
 
         connection.execute("""
             UPDATE expenses
