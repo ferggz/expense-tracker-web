@@ -24,9 +24,13 @@ nav a:hover {
 }
 
 .container {
-    max-width: 800px;
+    max-width: 900px;
     margin: 40px auto;
-    padding: 20px;
+    padding: 30px;
+    background-color: #1f2937;
+    border-radius: 12px;
+    margin-top: 40px;
+    margin-bottom: 40px;
 }
 
 h1, h2 {
@@ -38,6 +42,7 @@ form {
     flex-direction: column;
     gap: 15px;
     margin-top: 20px;
+    margin-bottom: 20px;
 }
 
 input {
@@ -45,6 +50,8 @@ input {
     border: none;
     border-radius: 8px;
     font-size: 16px;
+    background-color: #374151;
+    color: white;
 }
 
 button {
@@ -59,13 +66,6 @@ button {
 
 button:hover {
     background-color: #1d4ed8;
-}
-
-.expense-card {
-    background-color: #1f2937;
-    padding: 20px;
-    border-radius: 10px;
-    margin-top: 20px;
 }
 
 .expense-card a {
@@ -86,10 +86,84 @@ button:hover {
 }
 
 .flash-message {
-    background-color: #dc2626;
     color: white;
     padding: 15px;
     margin: 20px auto;
     border-radius: 8px;
     max-width: 800px;
+}
+
+.success {
+    background-color: #16a34a;
+}
+
+.error {
+    background-color: #dc2626;
+}
+
+table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 30px;
+    background-color: #1f2937;
+    border-radius: 10px;
+    overflow: hidden;
+    margin-bottom: 40px;
+}
+
+th {
+    background-color: #111827;
+    padding: 15px;
+    text-align: left;
+}
+
+td {
+    padding: 15px;
+    border-top: 1px solid #374151;
+}
+
+tr:hover {
+    background-color: #2a3547;
+}
+
+.action-link {
+    color: #60a5fa;
+    text-decoration: none;
+    margin-right: 10px;
+    font-weight: bold;
+}
+
+.action-link:hover {
+    text-decoration: underline;
+}
+
+.delete-button {
+    background-color: #dc2626;
+    padding: 8px 12px;
+    font-size: 14px;
+}
+
+.delete-button:hover {
+    background-color: #b91c1c;
+}
+
+h1 {
+    margin-bottom: 10px;
+}
+
+p {
+    line-height: 1.6;
+}
+
+input::placeholder {
+    color: #d1d5db;
+}
+
+td form {
+    display: inline;
+}
+
+button,
+.action-link {
+    transition: 0.2s;
 }

@@ -1,6 +1,7 @@
 from flask import Flask, render_template, request, redirect, session, flash
-from datetime import datetime
 from werkzeug.security import generate_password_hash, check_password_hash
+from datetime import datetime
+from functools import wraps
 import sqlite3
 
 app = Flask(__name__)
@@ -15,6 +16,18 @@ def get_db_connection():
     return connection
 
 
+def login_required(view):
+    @wraps(view)
+    def wrapped_view(*args, **kwargs):
+
+        if "user_id" not in session:
+            return redirect("/login")
+
+        return view(*args, **kwargs)
+
+    return wrapped_view
+
+
 @app.route("/")
 def home():
     return render_template("index.html")
@@ -22,6 +35,9 @@ def home():
 
 @app.route("/register", methods=["GET", "POST"])
 def register():
+    if "user_id" in session:
+        return redirect("/dashboard")
+
     if request.method == "POST":
         username = request.form["username"]
         password = generate_password_hash(request.form["password"])
@@ -36,7 +52,7 @@ def register():
         if existing_user:
             connection.close()
 
-            flash("Username already exists")
+            flash("Username already exists", "error")
 
             return redirect("/register")
 
@@ -55,6 +71,9 @@ def register():
 
 @app.route("/login", methods=["GET", "POST"])
 def login():
+    if "user_id" in session:
+        return redirect("/dashboard")
+
     if request.method == "POST":
         username = request.form["username"]
         password = request.form["password"]
@@ -74,16 +93,15 @@ def login():
 
             return redirect("/dashboard")
 
-        flash("Invalid username or password")
+        flash("Invalid username or password", "error")
         return redirect("/login")
 
     return render_template("login.html")
 
 
 @app.route("/dashboard")
+@login_required
 def dashboard():
-    if "user_id" not in session:
-        return redirect("/login")
 
     category = request.args.get("category")
     sort = request.args.get("sort")
@@ -101,6 +119,8 @@ def dashboard():
     if search:
         query += " AND description LIKE ?"
         params.append(f"%{search}%")
+
+    query += " ORDER BY date DESC, id DESC"
 
     expenses = connection.execute(query, params).fetchall()
 
@@ -123,9 +143,18 @@ def dashboard():
     total = connection.execute(total_query, total_params).fetchone()
 
     if sort == "amount":
-        expenses = sorted(expenses, key=lambda expense: expense["amount"], reverse=True)
+        expenses = sorted(
+            expenses,
+            key=lambda expense: expense["amount"],
+            reverse=True
+        )
+
     elif sort == "date":
-        expenses = sorted(expenses, key=lambda expense: expense["date"], reverse=True)
+        expenses = sorted(
+            expenses,
+            key=lambda expense: expense["date"],
+            reverse=True
+        )
 
     connection.close()
 
@@ -140,6 +169,7 @@ def dashboard():
 
 
 @app.route("/logout")
+@login_required
 def logout():
     session.clear()
 
@@ -147,19 +177,18 @@ def logout():
 
 
 @app.route("/add", methods=["GET", "POST"])
+@login_required
 def add_expense():
-    if "user_id" not in session:
-        return redirect("/login")
 
     if request.method == "POST":
         try:
             amount = float(request.form["amount"])
         except ValueError:
-            flash("Invalid amount")
+            flash("Invalid amount", "error")
             return redirect("/add")
 
         if amount <= 0:
-            flash("Amount must be greater than 0")
+            flash("Amount must be greater than 0", "error")
             return redirect("/add")
         
         category = request.form["category"]
@@ -176,15 +205,16 @@ def add_expense():
         connection.commit()
         connection.close()
 
+        flash("Expense added successfully", "success")
+
         return redirect("/dashboard")
 
     return render_template("add_expense.html")
 
 
-@app.route("/delete/<int:expense_id>")
+@app.route("/delete/<int:expense_id>", methods=["POST"])
+@login_required
 def delete_expense(expense_id):
-    if "user_id" not in session:
-        return redirect("/login")
 
     connection = get_db_connection()
 
@@ -196,13 +226,14 @@ def delete_expense(expense_id):
     connection.commit()
     connection.close()
 
+    flash("Expense deleted successfully", "success")
+
     return redirect("/dashboard")
 
 
 @app.route("/edit/<int:expense_id>", methods=["GET", "POST"])
+@login_required
 def edit_expense(expense_id):
-    if "user_id" not in session:
-        return redirect("/login")
 
     connection = get_db_connection()
 
@@ -213,6 +244,8 @@ def edit_expense(expense_id):
 
     if expense is None:
         connection.close()
+        flash("Expense updated successfully", "success")
+
         return redirect("/dashboard")
 
     if request.method == "POST":
