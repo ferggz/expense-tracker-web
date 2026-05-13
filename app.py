@@ -1,19 +1,11 @@
 from flask import Flask, render_template, request, redirect, session, flash
 from werkzeug.security import generate_password_hash, check_password_hash
+from database import get_db_connection
 from datetime import datetime
 from functools import wraps
-import sqlite3
 
 app = Flask(__name__)
 app.secret_key = "supersecretkey"
-
-DATABASE = "database.db"
-
-
-def get_db_connection():
-    connection = sqlite3.connect(DATABASE)
-    connection.row_factory = sqlite3.Row
-    return connection
 
 
 def login_required(view):
