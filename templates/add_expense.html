@@ -1,22 +1,37 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <title>Add Expense</title>
-</head>
-<body>
+{% extends "base.html" %}
 
-    <h1>Add Expense</h1>
+{% block title %}Add Expense{% endblock %}
 
-    <form method="POST">
-        <input type="number" step="0.01" name="amount" placeholder="Amount" required>
-        <input type="text" name="category" placeholder="Category" required>
-        <input type="text" name="description" placeholder="Description" required>
+{% block content %}
 
-        <button type="submit">Add expense</button>
-    </form>
+<h1>Add Expense</h1>
 
-    <a href="/dashboard">Back to dashboard</a>
+<form method="POST">
 
-</body>
-</html>
+    <input
+        type="number"
+        step="0.01"
+        name="amount"
+        placeholder="Amount"
+        required
+    >
+
+    <input
+        type="text"
+        name="category"
+        placeholder="Category"
+        required
+    >
+
+    <input
+        type="text"
+        name="description"
+        placeholder="Description"
+        required
+    >
+
+    <button type="submit">Add expense</button>
+
+</form>
+
+{% endblock %}

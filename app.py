@@ -1,5 +1,6 @@
-from flask import Flask, render_template, request, redirect, session
+from flask import Flask, render_template, request, redirect, session, flash
 from datetime import datetime
+from werkzeug.security import generate_password_hash, check_password_hash
 import sqlite3
 
 app = Flask(__name__)
@@ -23,9 +24,21 @@ def home():
 def register():
     if request.method == "POST":
         username = request.form["username"]
-        password = request.form["password"]
+        password = generate_password_hash(request.form["password"])
 
         connection = get_db_connection()
+
+        existing_user = connection.execute("""
+            SELECT * FROM users
+            WHERE username = ?
+        """, (username,)).fetchone()
+
+        if existing_user:
+            connection.close()
+
+            flash("Username already exists")
+
+            return redirect("/register")
 
         connection.execute("""
             INSERT INTO users (username, password)
@@ -50,18 +63,19 @@ def login():
 
         user = connection.execute("""
             SELECT * FROM users
-            WHERE username = ? AND password = ?
-        """, (username, password)).fetchone()
+            WHERE username = ?
+        """, (username,)).fetchone()
 
         connection.close()
 
-        if user:
+        if user and check_password_hash(user["password"], password):
             session["user_id"] = user["id"]
             session["username"] = user["username"]
 
             return redirect("/dashboard")
 
-        return "Invalid username or password"
+        flash("Invalid username or password")
+        return redirect("/login")
 
     return render_template("login.html")
 
@@ -72,32 +86,46 @@ def dashboard():
         return redirect("/login")
 
     category = request.args.get("category")
+    sort = request.args.get("sort")
+    search = request.args.get("search")
 
     connection = get_db_connection()
 
+    query = "SELECT * FROM expenses WHERE user_id = ?"
+    params = [session["user_id"]]
+
     if category:
-        expenses = connection.execute("""
-            SELECT * FROM expenses
-            WHERE user_id = ? AND category = ?
-        """, (session["user_id"], category)).fetchall()
+        query += " AND category = ?"
+        params.append(category)
 
-        total = connection.execute("""
-            SELECT SUM(amount) AS total
-            FROM expenses
-            WHERE user_id = ? AND category = ?
-        """, (session["user_id"], category)).fetchone()
+    if search:
+        query += " AND description LIKE ?"
+        params.append(f"%{search}%")
 
-    else:
-        expenses = connection.execute("""
-            SELECT * FROM expenses
-            WHERE user_id = ?
-        """, (session["user_id"],)).fetchall()
+    expenses = connection.execute(query, params).fetchall()
 
-        total = connection.execute("""
-            SELECT SUM(amount) AS total
-            FROM expenses
-            WHERE user_id = ?
-        """, (session["user_id"],)).fetchone()
+    total_query = """
+        SELECT SUM(amount) AS total
+        FROM expenses
+        WHERE user_id = ?
+    """
+
+    total_params = [session["user_id"]]
+
+    if category:
+        total_query += " AND category = ?"
+        total_params.append(category)
+
+    if search:
+        total_query += " AND description LIKE ?"
+        total_params.append(f"%{search}%")
+
+    total = connection.execute(total_query, total_params).fetchone()
+
+    if sort == "amount":
+        expenses = sorted(expenses, key=lambda expense: expense["amount"], reverse=True)
+    elif sort == "date":
+        expenses = sorted(expenses, key=lambda expense: expense["date"], reverse=True)
 
     connection.close()
 
@@ -105,7 +133,9 @@ def dashboard():
         "dashboard.html",
         expenses=expenses,
         total=total["total"],
-        category=category
+        category=category,
+        sort=sort,
+        search=search
     )
 
 
@@ -122,7 +152,16 @@ def add_expense():
         return redirect("/login")
 
     if request.method == "POST":
-        amount = float(request.form["amount"])
+        try:
+            amount = float(request.form["amount"])
+        except ValueError:
+            flash("Invalid amount")
+            return redirect("/add")
+
+        if amount <= 0:
+            flash("Amount must be greater than 0")
+            return redirect("/add")
+        
         category = request.form["category"]
         description = request.form["description"]
         date = datetime.now().strftime("%Y-%m-%d")
@@ -177,7 +216,16 @@ def edit_expense(expense_id):
         return redirect("/dashboard")
 
     if request.method == "POST":
-        amount = float(request.form["amount"])
+        try:
+            amount = float(request.form["amount"])
+        except ValueError:
+            flash("Invalid amount")
+            return redirect(f"/edit/{expense_id}")
+
+        if amount <= 0:
+            flash("Amount must be greater than 0")
+            return redirect(f"/edit/{expense_id}")
+        
         category = request.form["category"]
         description = request.form["description"]
 

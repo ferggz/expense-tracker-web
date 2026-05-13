@@ -1,19 +1,11 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Expense Tracker Web</title>
-</head>
-<body>
+{% extends "base.html" %}
 
-    <h1>Users</h1>
-    <a href="/register">Register</a>
-    <a href="/login">Login</a>
+{% block title %}Home{% endblock %}
 
-    {% for user in users %}
-        <p>{{ user["username"] }}</p>
-    {% endfor %}
+{% block content %}
 
-</body>
-</html>
+<h1>Expense Tracker Web</h1>
+
+<p>Track your expenses easily with Flask and SQLite.</p>
+
+{% endblock %}

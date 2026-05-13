@@ -1,49 +1,60 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <title>Dashboard</title>
-</head>
-<body>
+{% extends "base.html" %}
 
-    <h1>Dashboard</h1>
+{% block title %}Dashboard{% endblock %}
 
+{% block content %}
+
+<h1>Dashboard</h1>
+
+<p>Welcome, {{ session["username"] }}</p>
+
+<div class="total-box">
     <p>Total spent: {{ "%.2f"|format(total if total else 0) }} €</p>
+</div>
 
-    <form method="GET" action="/dashboard">
-        <input type="text" name="category" placeholder="Filter by category">
-        <button type="submit">Filter</button>
-    </form>
+<form method="GET" action="/dashboard">
+    <input type="text" name="category" placeholder="Filter by category">
+    <button type="submit">Filter</button>
+</form>
 
-    {% if category %}
-        <p>Showing expenses for category: {{ category }}</p>
-    {% endif %}
+<form method="GET" action="/dashboard">
+    <input type="text" name="search" placeholder="Search description">
+    <button type="submit">Search</button>
+</form>
 
-    <a href="/dashboard">Clear filter</a>
+<div>
+    <a href="/dashboard?sort=amount">Sort by amount</a>
+    <a href="/dashboard?sort=date">Sort by date</a>
+</div>
 
-    <p>Welcome, {{ session["username"] }}</p>
+{% if category %}
+    <p>Showing expenses for category: {{ category }}</p>
+{% endif %}
 
-    <a href="/logout">Logout</a>
-    <a href="/add">Add expense</a>
+<a href="/dashboard">Clear filter</a>
 
-    <h2>Your expenses</h2>
+<h2>Your expenses</h2>
 
-    {% if expenses %}
-        {% for expense in expenses %}
-            <div>
-                <p><strong>{{ expense["description"] }}</strong></p>
-                <p>{{ expense["amount"] }} €</p>
-                <p>{{ expense["category"] }}</p>
-                <p>{{ expense["date"] }}</p>
+{% if expenses %}
+    {% for expense in expenses %}
+        <div class="expense-card">
+            <p><strong>{{ expense["description"] }}</strong></p>
 
-                <a href="/edit/{{ expense['id'] }}">Edit</a>
-                <a href="/delete/{{ expense['id'] }}">Delete</a>
-            </div>
-            <hr>
-        {% endfor %}
-    {% else %}
-        <p>No expenses found.</p>
-    {% endif %}
+            <p>{{ "%.2f"|format(expense["amount"]) }} €</p>
 
-</body>
-</html>
+            <p>{{ expense["category"] }}</p>
+
+            <p>{{ expense["date"] }}</p>
+
+            <a href="/edit/{{ expense['id'] }}">Edit</a>
+
+            <a href="/delete/{{ expense['id'] }}">Delete</a>
+        </div>
+
+        <hr>
+    {% endfor %}
+{% else %}
+    <p>No expenses found.</p>
+{% endif %}
+
+{% endblock %}
