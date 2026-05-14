@@ -11,6 +11,53 @@
 <div class="stats-grid">
 
     <div class="total-box">
+
+        <p>Latest expense</p>
+
+        {% if latest_expense %}
+            <p>
+                {{ latest_expense["description"] }}
+                - {{ "%.2f"|format(latest_expense["amount"]) }} €
+            </p>
+
+            <p>{{ latest_expense["date"] }}</p>
+        {% else %}
+            <p>No data</p>
+        {% endif %}
+
+    </div>
+
+    <div class="total-box">
+
+        <p>Highest expense</p>
+
+        {% if highest_expense %}
+            <p>
+                {{ highest_expense["description"] }}
+                - {{ "%.2f"|format(highest_expense["amount"]) }} €
+            </p>
+        {% else %}
+            <p>No data</p>
+        {% endif %}
+
+    </div>
+
+    <div class="total-box">
+
+        <p>Top category</p>
+
+        {% if top_category %}
+            <p>
+                {{ top_category }}
+                ({{ "%.2f"|format(top_amount) }} €)
+            </p>
+        {% else %}
+            <p>No data</p>
+        {% endif %}
+
+    </div>
+
+    <div class="total-box">
         <p>Total spent: {{ "%.2f"|format(total if total else 0) }} €</p>
     </div>
 
@@ -29,33 +76,35 @@
 
 {% if category_totals %}
 
-<table>
+<div class="table-wrapper">
+    <table>
 
-    <tr>
-        <th>Category</th>
-        <th>Total</th>
-        <th>Percentage</th>
-    </tr>
+        <tr>
+            <th>Category</th>
+            <th>Total</th>
+            <th>Percentage</th>
+        </tr>
 
-    {% for category_name, amount in category_totals.items() %}
+        {% for category_name, amount in category_totals.items() %}
 
-    <tr>
-        <td>
-            <a href="/dashboard?category={{ category_name }}">
-                {{ category_name }}
-            </a>
-        </td>
+        <tr>
+            <td>
+                <a href="/dashboard?category={{ category_name }}">
+                    {{ category_name }}
+                </a>
+            </td>
 
-        <td>{{ "%.2f"|format(amount) }} €</td>
+            <td>{{ "%.2f"|format(amount) }} €</td>
 
-        <td>
-            {{ "%.1f"|format(category_percentages[category_name]) }}%
-        </td>
-    </tr>
+            <td>
+                {{ "%.1f"|format(category_percentages[category_name]) }}%
+            </td>
+        </tr>
 
-    {% endfor %}
+        {% endfor %}
 
-</table>
+    </table>
+</div>
 
 {% endif %}
 
@@ -89,8 +138,22 @@
     </a>
 </div>
 
-{% if category %}
-    <p>Showing expenses for category: {{ category }}</p>
+{% if category or search or sort %}
+    <div class="total-box">
+        <p>Active filters:</p>
+
+        {% if category %}
+            <p>Category: {{ category }}</p>
+        {% endif %}
+
+        {% if search %}
+            <p>Search: {{ search }}</p>
+        {% endif %}
+
+        {% if sort %}
+            <p>Sort: {{ sort }}</p>
+        {% endif %}
+    </div>
 {% endif %}
 
 <a class="action-link" href="/dashboard">Clear filters</a>
@@ -99,48 +162,50 @@
 
 {% if expenses %}
 
-<table>
+<div class="table-wrapper">
+    <table>
 
-    <tr>
-        <th>Description</th>
-        <th>Amount</th>
-        <th>Category</th>
-        <th>Date</th>
-        <th>Actions</th>
-    </tr>
+        <tr>
+            <th>Description</th>
+            <th>Amount</th>
+            <th>Category</th>
+            <th>Date</th>
+            <th>Actions</th>
+        </tr>
 
-    {% for expense in expenses %}
+        {% for expense in expenses %}
 
-    <tr>
+        <tr>
 
-        <td>{{ expense["description"] }}</td>
+            <td>{{ expense["description"] }}</td>
 
-        <td>{{ "%.2f"|format(expense["amount"]) }} €</td>
+            <td>{{ "%.2f"|format(expense["amount"]) }} €</td>
 
-        <td>{{ expense["category"] }}</td>
+            <td>{{ expense["category"] }}</td>
 
-        <td>{{ expense["date"] }}</td>
+            <td>{{ expense["date"] }}</td>
 
-        <td>
+            <td>
 
-            <a class="action-link" href="/edit/{{ expense['id'] }}">Edit</a>
+                <a class="action-link" href="/edit/{{ expense['id'] }}">Edit</a>
 
-            <form
-                method="POST"
-                action="/delete/{{ expense['id'] }}"
-                onsubmit="return confirm('Delete this expense?')"
-                style="display:inline;"
-            >
-                <button class="delete-button" type="submit">Delete</button>
-            </form>
+                <form
+                    method="POST"
+                    action="/delete/{{ expense['id'] }}"
+                    onsubmit="return confirm('Delete this expense?')"
+                    style="display:inline;"
+                >
+                    <button class="delete-button" type="submit">Delete</button>
+                </form>
 
-        </td>
+            </td>
 
-    </tr>
+        </tr>
 
-    {% endfor %}
+        {% endfor %}
 
-</table>
+    </table>
+</div>
 
 {% else %}
 

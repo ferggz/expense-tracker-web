@@ -12,9 +12,8 @@ from werkzeug.security import (
     check_password_hash
 )
 
-from datetime import datetime
 from functools import wraps
-
+from datetime import datetime
 from database import get_db_connection
 
 
@@ -167,6 +166,28 @@ def dashboard():
             category_totals[category_name] = 0
 
         category_totals[category_name] += expense["amount"]
+    
+    top_category = None
+    top_amount = 0
+
+    for category_name, amount in category_totals.items():
+
+        if amount > top_amount:
+            top_amount = amount
+            top_category = category_name
+    
+    latest_expense = None
+
+    if expenses:
+        latest_expense_date = expenses[0]
+    
+    highest_expense = None
+
+    if expenses:
+        highest_expense = max(
+            expenses,
+            key=lambda expense: expense["amount"]
+        )
 
     if total["total"]:
 
@@ -202,7 +223,11 @@ def dashboard():
         expense_count=expense_count,
         average=average,
         category_totals=category_totals,
-        category_percentages=category_percentages
+        category_percentages=category_percentages,
+        top_category=top_category,
+        top_amount=top_amount,
+        latest_expense=latest_expense,
+        highest_expense=highest_expense
     )
 
 
@@ -236,7 +261,13 @@ def add_expense():
             flash("Category and description cannot be empty", "error")
             return redirect("/add")
         
-        date = datetime.now().strftime("%Y-%m-%d")
+        date = request.form["date"]
+
+        try:
+            datetime.strptime(date, "%Y-%m-%d")
+        except ValueError:
+            flash("Invalid date", "error")
+            return redirect("/add")
 
         connection = get_db_connection()
 
@@ -304,6 +335,13 @@ def edit_expense(expense_id):
         
         category = request.form["category"].strip().title()
         description = request.form["description"].strip().title()
+        date = request.form["date"]
+
+        try:
+            datetime.strptime(date, "%Y-%m-%d")
+        except ValueError:
+            flash("Invalid date", "error")
+            return redirect(f"/edit/{expense_id}")
 
         if not category or not description:
             flash("Category and description cannot be empty", "error")
@@ -311,9 +349,9 @@ def edit_expense(expense_id):
 
         connection.execute("""
             UPDATE expenses
-            SET amount = ?, category = ?, description = ?
+            SET amount = ?, category = ?, description = ?, date = ?
             WHERE id = ? AND user_id = ?
-        """, (amount, category, description, expense_id, session["user_id"]))
+        """, (amount, category, description, date, expense_id, session["user_id"]))
 
         connection.commit()
         connection.close()
