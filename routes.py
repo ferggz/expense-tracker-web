@@ -147,14 +147,15 @@ def register():
     if request.method == "POST":
         username = request.form["username"].strip().lower()
         password = generate_password_hash(request.form["password"])
-    
-    if not username:
-        flash("Username cannot be empty", "error")
-        return redirect("/register")
-    
-    if len(username) > 30:
-        flash("Username too long", "error")
-        return redirect("/register")
+        created_at = datetime.now().strftime("%Y-%m-%d")
+
+        if not username:
+            flash("Username cannot be empty", "error")
+            return redirect("/register")
+
+        if len(username) > 30:
+            flash("Username too long", "error")
+            return redirect("/register")
 
         connection = get_db_connection()
 
@@ -165,12 +166,8 @@ def register():
 
         if existing_user:
             connection.close()
-
             flash("Username already exists", "error")
-
             return redirect("/register")
-
-        created_at = datetime.now().strftime("%Y-%m-%d")
 
         connection.execute("""
             INSERT INTO users (username, password, created_at)
@@ -180,7 +177,7 @@ def register():
         connection.commit()
         connection.close()
 
-        return redirect("/")
+        return redirect("/login")
 
     return render_template("register.html")
 
@@ -245,14 +242,6 @@ def dashboard():
     )
 
     stats = calculate_dashboard_stats(expenses, total)
-
-    if total["total"]:
-
-        for category_name, amount in category_totals.items():
-
-            percentage = (amount / total["total"]) * 100
-
-            category_percentages[category_name] = percentage
 
     if sort == "amount":
         expenses = sorted(
@@ -385,40 +374,45 @@ def edit_expense(expense_id):
     if expense is None:
         connection.close()
         flash("Expense not found", "error")
-
         return redirect("/dashboard")
 
     if request.method == "POST":
         try:
             amount = float(request.form["amount"])
         except ValueError:
-            flash("Invalid amount")
+            connection.close()
+            flash("Invalid amount", "error")
             return redirect(f"/edit/{expense_id}")
 
         if amount <= 0:
-            flash("Amount must be greater than 0")
-            return redirect(f"/edit/{expense_id}")
-        
-        if len(category) > 30:
-            flash("Category too long", "error")
+            connection.close()
+            flash("Amount must be greater than 0", "error")
             return redirect(f"/edit/{expense_id}")
 
-        if len(description) > 100:
-            flash("Description too long", "error")
-            return redirect(f"/edit/{expense_id}")
-        
         category = request.form["category"].strip().title()
         description = request.form["description"].strip().title()
         date = request.form["date"]
 
+        if not category or not description:
+            connection.close()
+            flash("Category and description cannot be empty", "error")
+            return redirect(f"/edit/{expense_id}")
+
+        if len(category) > 30:
+            connection.close()
+            flash("Category too long", "error")
+            return redirect(f"/edit/{expense_id}")
+
+        if len(description) > 100:
+            connection.close()
+            flash("Description too long", "error")
+            return redirect(f"/edit/{expense_id}")
+
         try:
             datetime.strptime(date, "%Y-%m-%d")
         except ValueError:
+            connection.close()
             flash("Invalid date", "error")
-            return redirect(f"/edit/{expense_id}")
-
-        if not category or not description:
-            flash("Category and description cannot be empty", "error")
             return redirect(f"/edit/{expense_id}")
 
         connection.execute("""
