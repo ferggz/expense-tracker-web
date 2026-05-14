@@ -32,6 +32,108 @@ def login_required(view):
     return wrapped_view
 
 
+def get_filtered_expenses(connection, user_id, category, search):
+
+    query = "SELECT * FROM expenses WHERE user_id = ?"
+    params = [user_id]
+
+    if category:
+        query += " AND category = ?"
+        params.append(category)
+
+    if search:
+        query += " AND description LIKE ?"
+        params.append(f"%{search}%")
+
+    query += " ORDER BY date DESC, id DESC"
+
+    return connection.execute(query, params).fetchall()
+
+
+def get_total_amount(connection, user_id, category, search):
+
+    query = """
+        SELECT SUM(amount) AS total
+        FROM expenses
+        WHERE user_id = ?
+    """
+
+    params = [user_id]
+
+    if category:
+        query += " AND category = ?"
+        params.append(category)
+
+    if search:
+        query += " AND description LIKE ?"
+        params.append(f"%{search}%")
+
+    return connection.execute(query, params).fetchone()
+
+
+def calculate_dashboard_stats(expenses, total):
+
+    expense_count = len(expenses)
+
+    average = 0
+
+    if expense_count > 0:
+        average = total["total"] / expense_count
+
+    category_totals = {}
+    category_percentages = {}
+
+    for expense in expenses:
+
+        category_name = expense["category"]
+
+        if category_name not in category_totals:
+            category_totals[category_name] = 0
+
+        category_totals[category_name] += expense["amount"]
+
+    top_category = None
+    top_amount = 0
+
+    for category_name, amount in category_totals.items():
+
+        if amount > top_amount:
+            top_amount = amount
+            top_category = category_name
+
+    latest_expense = None
+
+    if expenses:
+        latest_expense = expenses[0]
+
+    highest_expense = None
+
+    if expenses:
+        highest_expense = max(
+            expenses,
+            key=lambda expense: expense["amount"]
+        )
+
+    if total["total"]:
+
+        for category_name, amount in category_totals.items():
+
+            percentage = (amount / total["total"]) * 100
+
+            category_percentages[category_name] = percentage
+
+    return {
+        "expense_count": expense_count,
+        "average": average,
+        "category_totals": category_totals,
+        "category_percentages": category_percentages,
+        "top_category": top_category,
+        "top_amount": top_amount,
+        "latest_expense": latest_expense,
+        "highest_expense": highest_expense
+    }
+
+
 @bp.route("/")
 def home():
     return render_template("index.html")
@@ -49,6 +151,10 @@ def register():
     if not username:
         flash("Username cannot be empty", "error")
         return redirect("/register")
+    
+    if len(username) > 30:
+        flash("Username too long", "error")
+        return redirect("/register")
 
         connection = get_db_connection()
 
@@ -64,10 +170,12 @@ def register():
 
             return redirect("/register")
 
+        created_at = datetime.now().strftime("%Y-%m-%d")
+
         connection.execute("""
-            INSERT INTO users (username, password)
-            VALUES (?, ?)
-        """, (username, password))
+            INSERT INTO users (username, password, created_at)
+            VALUES (?, ?, ?)
+        """, (username, password, created_at))
 
         connection.commit()
         connection.close()
@@ -117,77 +225,26 @@ def dashboard():
 
     connection = get_db_connection()
 
-    query = "SELECT * FROM expenses WHERE user_id = ?"
-    params = [session["user_id"]]
+    user = connection.execute("""
+        SELECT * FROM users
+        WHERE id = ?
+    """, (session["user_id"],)).fetchone()
 
-    if category:
-        query += " AND category = ?"
-        params.append(category)
+    expenses = get_filtered_expenses(
+        connection,
+        session["user_id"],
+        category,
+        search
+    )
 
-    if search:
-        query += " AND description LIKE ?"
-        params.append(f"%{search}%")
+    total = get_total_amount(
+        connection,
+        session["user_id"],
+        category,
+        search
+    )
 
-    query += " ORDER BY date DESC, id DESC"
-
-    expenses = connection.execute(query, params).fetchall()
-
-    total_query = """
-        SELECT SUM(amount) AS total
-        FROM expenses
-        WHERE user_id = ?
-    """
-
-    total_params = [session["user_id"]]
-
-    if category:
-        total_query += " AND category = ?"
-        total_params.append(category)
-
-    if search:
-        total_query += " AND description LIKE ?"
-        total_params.append(f"%{search}%")
-
-    total = connection.execute(total_query, total_params).fetchone()
-    expense_count = len(expenses)
-
-    average = 0
-
-    category_totals = {}
-    category_percentages = {}
-
-    if expense_count > 0:
-        average = total["total"] / expense_count
-
-    for expense in expenses:
-        category_name = expense["category"]
-
-        if category_name not in category_totals:
-            category_totals[category_name] = 0
-
-        category_totals[category_name] += expense["amount"]
-    
-    top_category = None
-    top_amount = 0
-
-    for category_name, amount in category_totals.items():
-
-        if amount > top_amount:
-            top_amount = amount
-            top_category = category_name
-    
-    latest_expense = None
-
-    if expenses:
-        latest_expense_date = expenses[0]
-    
-    highest_expense = None
-
-    if expenses:
-        highest_expense = max(
-            expenses,
-            key=lambda expense: expense["amount"]
-        )
+    stats = calculate_dashboard_stats(expenses, total)
 
     if total["total"]:
 
@@ -220,14 +277,15 @@ def dashboard():
         category=category,
         sort=sort,
         search=search,
-        expense_count=expense_count,
-        average=average,
-        category_totals=category_totals,
-        category_percentages=category_percentages,
-        top_category=top_category,
-        top_amount=top_amount,
-        latest_expense=latest_expense,
-        highest_expense=highest_expense
+        expense_count=stats["expense_count"],
+        average=stats["average"],
+        category_totals=stats["category_totals"],
+        category_percentages=stats["category_percentages"],
+        top_category=stats["top_category"],
+        top_amount=stats["top_amount"],
+        latest_expense=stats["latest_expense"],
+        highest_expense=stats["highest_expense"],
+        user=user
     )
 
 
@@ -259,6 +317,14 @@ def add_expense():
 
         if not category or not description:
             flash("Category and description cannot be empty", "error")
+            return redirect("/add")
+        
+        if len(category) > 30:
+            flash("Category too long", "error")
+            return redirect("/add")
+
+        if len(description) > 100:
+            flash("Description too long", "error")
             return redirect("/add")
         
         date = request.form["date"]
@@ -331,6 +397,14 @@ def edit_expense(expense_id):
 
         if amount <= 0:
             flash("Amount must be greater than 0")
+            return redirect(f"/edit/{expense_id}")
+        
+        if len(category) > 30:
+            flash("Category too long", "error")
+            return redirect(f"/edit/{expense_id}")
+
+        if len(description) > 100:
+            flash("Description too long", "error")
             return redirect(f"/edit/{expense_id}")
         
         category = request.form["category"].strip().title()
