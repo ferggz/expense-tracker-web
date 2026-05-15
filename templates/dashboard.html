@@ -14,7 +14,7 @@
 
     <div class="total-box">
 
-        <p>Latest expense</p>
+        <p>🕒 Latest expense</p>
 
         {% if latest_expense %}
             <p>
@@ -31,7 +31,7 @@
 
     <div class="total-box">
 
-        <p>Highest expense</p>
+        <p>📈 Highest expense</p>
 
         {% if highest_expense %}
             <p>
@@ -46,7 +46,7 @@
 
     <div class="total-box">
 
-        <p>Top category</p>
+        <p>🥇 Top category</p>
 
         {% if top_category %}
             <p>
@@ -60,14 +60,14 @@
     </div>
 
     <div class="total-box">
-        <p>Total spent: {{ "%.2f"|format(total if total else 0) }} €</p>
+        <p>💰 Total spent: {{ "%.2f"|format(total if total else 0) }} €</p>
     </div>
 
     <div class="total-box">
-        <p>Total expenses: {{ expense_count }}</p>
+        <p>🧾 Total expenses: {{ expense_count }}</p>
 
         <p>
-            Average expense:
+            📊 Average expense:
             {{ "%.2f"|format(average) }} €
         </p>
     </div>

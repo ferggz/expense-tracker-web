@@ -94,6 +94,7 @@ http://127.0.0.1:5000
 ### Dashboard
 
 ![Dashboard](screenshots/dashboard.png)
+![Dashboard](screenshots/dashboard2.png)
 
 ### Add Expense
 
