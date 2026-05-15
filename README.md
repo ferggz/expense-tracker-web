@@ -88,3 +88,25 @@ http://127.0.0.1:5000
 - Add charts
 - Add password reset
 - Improve mobile UI
+
+## Screenshots
+
+### Dashboard
+
+![Dashboard](screenshots/dashboard.png)
+
+### Add Expense
+
+![Add Expense](screenshots/add-expense.png)
+
+### Edit Expense
+
+![Edit Expense](screenshots/edit-expense.png)
+
+### Login
+
+![Login](screenshots/login.png)
+
+### Register
+
+![Register](screenshots/register.png)
